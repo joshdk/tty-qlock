@@ -144,169 +144,126 @@ def draw_border(screen, chars=[], attr=None):
 #}}}
 
 
-#{{{ Create clock mask
-def _build_mask(time):
-	mask = set()
-
-	#  0: I   T   L   I   S   A   S   T   I   M   E
-	#
-	# 11: A   C   Q   U   A   R   T   E   R   D   C
-	#
-	# 22: T   W   E   N   T   Y   F   I   V   E   X
-	#
-	# 33: H   A   L   F   B   T   E   N   F   T   O
-	#
-	# 44: P   A   S   T   E   R   U   N   I   N   E
-	#
-	# 55: O   N   E   S   I   X   T   H   R   E   E
-	#
-	# 66: F   O   U   R   F   I   V   E   T   W   O
-	#
-	# 77: E   I   G   H   T   E   L   E   V   E   N
-	#
-	# 88: S   E   V   E   N   T   W   E   L   V   E
-	#
-	# 99: T   E   N   S   E   O'  C   L   O   C   K
-
-	mask.update([0,1,3,4]) # IT IS
-
-	hour = time.hour
-	minute = time.minute
-
-
-#{{{ Minute masks
-	if minute >= 55:
-		mask.update([28, 29, 30, 31]) # FIVE
-		mask.update([42, 43]) # TO
-		hour += 1
-
-	elif minute >= 50:
-		mask.update([38, 39, 40]) # TEN
-		mask.update([42, 43]) # TO
-		hour += 1
-
-	elif minute >= 45:
-		mask.update([11]) # A
-		mask.update([13, 14, 15, 16, 17, 18, 19]) # QUARTER
-		mask.update([42, 43]) # TO
-		hour += 1
-
-	elif minute >= 40:
-		mask.update([22, 23, 24, 25, 26, 27]) # TWENTY
-		mask.update([42, 43]) # TO
-		hour += 1
-
-	elif minute >= 35:
-		mask.update([22, 23, 24, 25, 26, 27]) # TWENTY
-		mask.update([28, 29, 30, 31]) # FIVE
-		mask.update([42, 43]) # TO
-		hour += 1
-
-	elif minute >= 30:
-		mask.update([33, 34, 35, 36]) # HALF
-		mask.update([44, 45, 46, 47]) # PAST
-
-	elif minute >= 25:
-		mask.update([22, 23, 24, 25, 26, 27]) # TWENTY
-		mask.update([28, 29, 30, 31]) # FIVE
-		mask.update([44, 45, 46, 47]) # PAST
-
-	elif minute >= 20:
-		mask.update([22, 23, 24, 25, 26, 27]) # TWENTY
-		mask.update([44, 45, 46, 47]) # PAST
-
-	elif minute >= 15:
-		mask.update([11]) # A
-		mask.update([13, 14, 15, 16, 17, 18, 19]) # QUARTER
-		mask.update([44, 45, 46, 47]) # PAST
-
-	elif minute >= 10:
-		mask.update([38, 39, 40]) # TEN
-		mask.update([44, 45, 46, 47]) # PAST
-
-	elif minute >= 5:
-		mask.update([28, 29, 30, 31]) # FIVE
-		mask.update([44, 45, 46, 47]) # PAST
-
-	elif minute >= 0:
-		mask.update([104, 105, 106, 107, 108, 109, 110]) # O'CLOCK
-#}}}
-
-	hour = hour % 12
-
-#{{{ Hour masks
-	if hour == 1:
-		mask.update([55, 56, 57]) # ONE
-
-	elif hour == 2:
-		mask.update([74, 75, 76]) # TWO
-
-	elif hour == 3:
-		mask.update([61, 62, 63, 64, 65]) # THREE
-
-	elif hour == 4:
-		mask.update([66, 67, 68, 69]) # FOUR
-
-	elif hour == 5:
-		mask.update([70, 71, 72, 73]) # FIVE
-
-	elif hour == 6:
-		mask.update([58, 59, 60]) # SIX
-
-	elif hour == 7:
-		mask.update([88, 89, 90, 91, 92]) # SEVEN
-
-	elif hour == 8:
-		mask.update([77, 78, 79, 80, 81]) # EIGHT
-
-	elif hour == 9:
-		mask.update([51, 52, 53, 54]) # NINE
-
-	elif hour in (10, 12+10):
-		mask.update([99, 100, 101]) # TEN
-
-	elif hour in (11, 12+11):
-		mask.update([82, 83, 84, 85, 86, 87]) # ELEVEN
-
-	elif hour == 0:
-		mask.update([93, 94, 95, 96, 97, 98]) # TWELVE
-#}}}
-
-	return mask
-#}}}
-
-
 #{{{ Draw the clock
 def draw_clock(screen, attrs=[]):
 
 	time = datetime.now()
+	hour = time.hour
+	minute = time.minute
 
-	color_on  = attrs[0] if len(attrs) >= 1 else color(2)
-	color_off = attrs[1] if len(attrs) >= 2 else color(0)
+	color_on  = attrs[0] if len(attrs) >= 1 else None
+	color_off = attrs[1] if len(attrs) >= 2 else None
 
-	data = 'ITLISASTIMEACQUARTERDCTWENTYFIVEXHALFBTENFTOPASTERUNINEONESIXTHREEFOURFIVETWOEIGHTELEVENSEVENTWELVETENSEO\'CLOCK'
+#{{{ Draw empty grid
+	draw_str(screen,  0,  0, "I   T   L   I   S   A   S   T   I   M   E", color_off)
+	draw_str(screen,  2,  0, "A   C   Q   U   A   R   T   E   R   D   C", color_off)
+	draw_str(screen,  4,  0, "T   W   E   N   T   Y   F   I   V   E   X", color_off)
+	draw_str(screen,  6,  0, "H   A   L   F   B   T   E   N   F   T   O", color_off)
+	draw_str(screen,  8,  0, "P   A   S   T   E   R   U   N   I   N   E", color_off)
+	draw_str(screen, 10,  0, "O   N   E   S   I   X   T   H   R   E   E", color_off)
+	draw_str(screen, 12,  0, "F   O   U   R   F   I   V   E   T   W   O", color_off)
+	draw_str(screen, 14,  0, "E   I   G   H   T   E   L   E   V   E   N", color_off)
+	draw_str(screen, 16,  0, "S   E   V   E   N   T   W   E   L   V   E", color_off)
+	draw_str(screen, 18,  0, "T   E   N   S   E   O'  C   L   O   C   K", color_off)
+#}}}
 
-	mask = _build_mask(time)
+#{{{ All
+	draw_str(screen,  0,  0, "I   T", color_on)
+	draw_str(screen,  0, 12, "I   S", color_on)
+#}}}
 
-	for i, letter in enumerate(data):
-		if i in mask:
-			color = color_on
-		else:
-			color = color_off
+#{{{
+	if minute >= 35:
+		draw_str(screen,  6, 36, "T   O", color_on)
+	elif minute >= 5:
+		draw_str(screen,  8,  0, "P   A   S   T", color_on)
+#}}}
 
-		x, y = (None, None)
+#{{{ Minutes
+	if minute >= 55:
+		draw_str(screen,  4, 24, "F   I   V   E", color_on)
 
-		if i <= 104:
-			x = i % 11 * 4
-			y = i // 11 * 2
-		elif i == 105:
-			x = 21
-			y = 18
-		elif i > 105:
-			x = (i - 106) * 4 + 24
-			y = 18
+	elif minute >= 50:
+		draw_str(screen,  6, 20, "T   E   N", color_on)
 
-		draw_str(screen, y, x, letter, color)
+	elif minute >= 45:
+		draw_str(screen,  2,  0, "A", color_on)
+		draw_str(screen,  2,  8, "Q   U   A   R   T   E   R", color_on)
+
+	elif minute >= 40:
+		draw_str(screen,  4,  0, "T   W   E   N   T   Y", color_on)
+
+	elif minute >= 35:
+		draw_str(screen,  4,  0, "T   W   E   N   T   Y", color_on)
+		draw_str(screen,  4, 24, "F   I   V   E", color_on)
+
+	elif minute >= 30:
+		draw_str(screen,  6,  0, "H   A   L   F", color_on)
+
+	elif minute >= 25:
+		draw_str(screen,  4,  0, "T   W   E   N   T   Y", color_on)
+		draw_str(screen,  4, 24, "F   I   V   E", color_on)
+
+	elif minute >= 20:
+		draw_str(screen,  4,  0, "T   W   E   N   T   Y", color_on)
+
+	elif minute >= 15:
+		draw_str(screen,  2,  0, "A", color_on)
+		draw_str(screen,  2,  8, "Q   U   A   R   T   E   R", color_on)
+
+	elif minute >= 10:
+		draw_str(screen,  6, 20, "T   E   N", color_on)
+
+	elif minute >= 5:
+		draw_str(screen,  4, 24, "F   I   V   E", color_on)
+
+	else:
+		draw_str(screen, 18, 20, "O'  C   L   O   C   K", color_on)
+#}}}
+
+#{{{ Hours
+	if minute >= 35:
+		hour += 1
+	hour %= 12
+
+	if hour == 1:
+		draw_str(screen, 10,  0, "O   N   E", color_on)
+
+	elif hour == 2:
+		draw_str(screen, 12, 32, "T   W   O", color_on)
+
+	elif hour == 3:
+		draw_str(screen, 10, 24, "T   H   R   E   E", color_on)
+
+	elif hour == 4:
+		draw_str(screen, 12,  0, "F   O   U   R", color_on)
+
+	elif hour == 5:
+		draw_str(screen, 12, 16, "F   I   V   E", color_on)
+
+	elif hour == 6:
+		draw_str(screen, 10, 12, "S   I   X", color_on)
+
+	elif hour == 7:
+		draw_str(screen, 16,  0, "S   E   V   E   N", color_on)
+
+	elif hour == 8:
+		draw_str(screen, 14,  0, "E   I   G   H   T", color_on)
+
+	elif hour == 9:
+		draw_str(screen,  8, 28, "N   I   N   E", color_on)
+
+	elif hour == 10:
+		draw_str(screen, 18,  0, "T   E   N", color_on)
+
+	elif hour == 11:
+		draw_str(screen, 14, 20, "E   L   E   V   E   N", color_on)
+
+	elif hour == 0:
+		draw_str(screen, 16, 20, "T   W   E   L   V   E", color_on)
+
+#}}}
+
 #}}}
 
 
@@ -314,15 +271,15 @@ def draw_clock(screen, attrs=[]):
 def draw(screen, attrs):
 	rows, cols = screen.getmaxyx()
 
-	if rows < 23 or cols < 47:
+	if rows < 25 or cols < 51:
 		screen.clear()
 		return
 
 	y = int(rows/2 - 23/2)
-	x = int(cols/2 - 47/2)
+	x = int(cols/2 - 49/2)
 
-	border = screen.derwin(23, 47, y, x)
-	clock = border.derwin(19, 41, 2, 3)
+	border = screen.derwin(23, 49, y, x)
+	clock = border.derwin(19, 41, 2, 4)
 
 	draw_clock(clock, attrs[0])
 	draw_border(border, ['┃','┃','━','━','┏','┓','┗','┛'], attrs[1])
