@@ -17,11 +17,11 @@ def curses_init():
 	returns the screen which curses is bound to.
 	"""
 	curses.initscr()
-	curses.curs_set(0)
-	curses.noecho()
 	if curses.has_colors() == True:
 		curses.start_color()
 		curses.use_default_colors()
+	curses.noecho()
+	curses.curs_set(0)
 
 	screen = None
 	try:
@@ -40,6 +40,7 @@ def curses_fini(curses, screen=None):
 	""" Standard clean-up for when program finishes
 	"""
 	if screen is not None:
+		screen.getch()
 		screen.clear()
 	curses.endwin()
 #}}}
@@ -101,51 +102,57 @@ def draw_str(screen, y, x, text, attr=None):
 
 
 #{{{ A better border drawing routine
-def draw_border(screen, chars=[], attr=None):
-	rows, cols = screen.getmaxyx()
+def draw_border(screen, chars=[], attr=None, size=None, offset=None):
 
-	screen.border(0)
+	(rows, cols) = screen.getmaxyx() if size is None else size
+	(top, left)     = (0, 0) if offset is None else offset
+
+	def _draw_str(y, x, text, attr=None):
+		draw_str(screen, y+top, x+left, text, attr)
 
 	if len(chars) < 1:
 		return
 	for y in range(1,rows-1):
-		draw_str(screen, y, 0, chars[0], attr)
+		_draw_str(y, 0, chars[0], attr)
 
 	if len(chars) < 2:
 		return
 	for y in range(1,rows-1):
-		draw_str(screen, y, cols-1, chars[1], attr)
+		_draw_str(y, cols-1, chars[1], attr)
 
 	if len(chars) < 3:
 		return
 	for x in range(1,cols-1):
-		draw_str(screen, 0, x, chars[2], attr)
+		_draw_str(0, x, chars[2], attr)
 
 	if len(chars) < 4:
 		return
 	for x in range(1,cols-1):
-		draw_str(screen, rows-1, x, chars[3], attr)
+		_draw_str(rows-1, x, chars[3], attr)
 
 	if len(chars) < 5:
 		return
-	draw_str(screen, 0, 0, chars[4], attr)
+	_draw_str(0, 0, chars[4], attr)
 
 	if len(chars) < 6:
 		return
-	draw_str(screen, 0, cols-1, chars[5], attr)
+	_draw_str(0, cols-1, chars[5], attr)
 
 	if len(chars) < 7:
 		return
-	draw_str(screen, rows-1, 0, chars[6], attr)
+	_draw_str(rows-1, 0, chars[6], attr)
 
 	if len(chars) < 8:
 		return
-	draw_str(screen, rows-1, cols-1, chars[7], attr)
+	_draw_str(rows-1, cols-1, chars[7], attr)
 #}}}
 
 
 #{{{ Draw the clock
-def draw_clock(screen, attrs=[]):
+def draw_clock(screen, attrs=[], size=None, offset=None):
+
+	(rows, cols) = screen.getmaxyx() if size is None else size
+	(top, left)     = (0, 0) if offset is None else offset
 
 	time = datetime.now()
 	hour = time.hour
@@ -154,71 +161,75 @@ def draw_clock(screen, attrs=[]):
 	color_on  = attrs[0] if len(attrs) >= 1 else None
 	color_off = attrs[1] if len(attrs) >= 2 else None
 
+	def _draw_str(y, x, text, attr=color_on):
+		draw_str(screen, y+top, x+left, text, attr)
+
+
 #{{{ Draw empty grid
-	draw_str(screen,  0,  0, "I   T   L   I   S   A   S   T   I   M   E", color_off)
-	draw_str(screen,  2,  0, "A   C   Q   U   A   R   T   E   R   D   C", color_off)
-	draw_str(screen,  4,  0, "T   W   E   N   T   Y   F   I   V   E   X", color_off)
-	draw_str(screen,  6,  0, "H   A   L   F   B   T   E   N   F   T   O", color_off)
-	draw_str(screen,  8,  0, "P   A   S   T   E   R   U   N   I   N   E", color_off)
-	draw_str(screen, 10,  0, "O   N   E   S   I   X   T   H   R   E   E", color_off)
-	draw_str(screen, 12,  0, "F   O   U   R   F   I   V   E   T   W   O", color_off)
-	draw_str(screen, 14,  0, "E   I   G   H   T   E   L   E   V   E   N", color_off)
-	draw_str(screen, 16,  0, "S   E   V   E   N   T   W   E   L   V   E", color_off)
-	draw_str(screen, 18,  0, "T   E   N   S   E   O'  C   L   O   C   K", color_off)
+	_draw_str( 0,  0, "I   T   L   I   S   A   S   T   I   M   E", color_off)
+	_draw_str( 2,  0, "A   C   Q   U   A   R   T   E   R   D   C", color_off)
+	_draw_str( 4,  0, "T   W   E   N   T   Y   F   I   V   E   X", color_off)
+	_draw_str( 6,  0, "H   A   L   F   B   T   E   N   F   T   O", color_off)
+	_draw_str( 8,  0, "P   A   S   T   E   R   U   N   I   N   E", color_off)
+	_draw_str(10,  0, "O   N   E   S   I   X   T   H   R   E   E", color_off)
+	_draw_str(12,  0, "F   O   U   R   F   I   V   E   T   W   O", color_off)
+	_draw_str(14,  0, "E   I   G   H   T   E   L   E   V   E   N", color_off)
+	_draw_str(16,  0, "S   E   V   E   N   T   W   E   L   V   E", color_off)
+	_draw_str(18,  0, "T   E   N   S   E   O'  C   L   O   C   K", color_off)
 #}}}
 
 #{{{ All
-	draw_str(screen,  0,  0, "I   T", color_on)
-	draw_str(screen,  0, 12, "I   S", color_on)
+	_draw_str( 0,  0, "I   T")
+	_draw_str( 0, 12, "I   S")
 #}}}
 
 #{{{
 	if minute >= 35:
-		draw_str(screen,  6, 36, "T   O", color_on)
+		_draw_str( 6, 36, "T   O")
 	elif minute >= 5:
-		draw_str(screen,  8,  0, "P   A   S   T", color_on)
+		_draw_str( 8,  0, "P   A   S   T")
 #}}}
 
 #{{{ Minutes
 	if minute >= 55:
-		draw_str(screen,  4, 24, "F   I   V   E", color_on)
+		_draw_str( 4, 24, "F   I   V   E")
 
 	elif minute >= 50:
-		draw_str(screen,  6, 20, "T   E   N", color_on)
+		_draw_str( 6, 20, "T   E   N")
 
 	elif minute >= 45:
-		draw_str(screen,  2,  0, "A", color_on)
-		draw_str(screen,  2,  8, "Q   U   A   R   T   E   R", color_on)
+		_draw_str( 2,  0, "A")
+		_draw_str( 2,  8, "Q   U   A   R   T   E   R")
 
 	elif minute >= 40:
-		draw_str(screen,  4,  0, "T   W   E   N   T   Y", color_on)
+		_draw_str( 4,  0, "T   W   E   N   T   Y")
 
 	elif minute >= 35:
-		draw_str(screen,  4,  0, "T   W   E   N   T   Y", color_on)
-		draw_str(screen,  4, 24, "F   I   V   E", color_on)
+		_draw_str( 4,  0, "T   W   E   N   T   Y")
+		_draw_str( 4, 24, "F   I   V   E")
 
 	elif minute >= 30:
-		draw_str(screen,  6,  0, "H   A   L   F", color_on)
+		_draw_str( 6,  0, "H   A   L   F")
 
 	elif minute >= 25:
-		draw_str(screen,  4,  0, "T   W   E   N   T   Y", color_on)
-		draw_str(screen,  4, 24, "F   I   V   E", color_on)
+		_draw_str( 4,  0, "T   W   E   N   T   Y")
+		_draw_str( 4, 24, "F   I   V   E")
 
 	elif minute >= 20:
-		draw_str(screen,  4,  0, "T   W   E   N   T   Y", color_on)
+		_draw_str( 4,  0, "T   W   E   N   T   Y")
 
 	elif minute >= 15:
-		draw_str(screen,  2,  0, "A", color_on)
-		draw_str(screen,  2,  8, "Q   U   A   R   T   E   R", color_on)
+		_draw_str( 2,  0, "A")
+		_draw_str( 2,  8, "Q   U   A   R   T   E   R")
 
 	elif minute >= 10:
-		draw_str(screen,  6, 20, "T   E   N", color_on)
+		_draw_str( 6, 20, "T   E   N")
 
 	elif minute >= 5:
-		draw_str(screen,  4, 24, "F   I   V   E", color_on)
+		_draw_str( 4, 24, "F   I   V   E")
 
 	else:
-		draw_str(screen, 18, 20, "O'  C   L   O   C   K", color_on)
+		_draw_str(18, 20, "O'  C   L   O   C   K")
 #}}}
 
 #{{{ Hours
@@ -227,40 +238,40 @@ def draw_clock(screen, attrs=[]):
 	hour %= 12
 
 	if hour == 1:
-		draw_str(screen, 10,  0, "O   N   E", color_on)
+		_draw_str(10,  0, "O   N   E")
 
 	elif hour == 2:
-		draw_str(screen, 12, 32, "T   W   O", color_on)
+		_draw_str(12, 32, "T   W   O")
 
 	elif hour == 3:
-		draw_str(screen, 10, 24, "T   H   R   E   E", color_on)
+		_draw_str(10, 24, "T   H   R   E   E")
 
 	elif hour == 4:
-		draw_str(screen, 12,  0, "F   O   U   R", color_on)
+		_draw_str(12,  0, "F   O   U   R")
 
 	elif hour == 5:
-		draw_str(screen, 12, 16, "F   I   V   E", color_on)
+		_draw_str(12, 16, "F   I   V   E")
 
 	elif hour == 6:
-		draw_str(screen, 10, 12, "S   I   X", color_on)
+		_draw_str(10, 12, "S   I   X")
 
 	elif hour == 7:
-		draw_str(screen, 16,  0, "S   E   V   E   N", color_on)
+		_draw_str(16,  0, "S   E   V   E   N")
 
 	elif hour == 8:
-		draw_str(screen, 14,  0, "E   I   G   H   T", color_on)
+		_draw_str(14,  0, "E   I   G   H   T")
 
 	elif hour == 9:
-		draw_str(screen,  8, 28, "N   I   N   E", color_on)
+		_draw_str( 8, 28, "N   I   N   E")
 
 	elif hour == 10:
-		draw_str(screen, 18,  0, "T   E   N", color_on)
+		_draw_str(18,  0, "T   E   N")
 
 	elif hour == 11:
-		draw_str(screen, 14, 20, "E   L   E   V   E   N", color_on)
+		_draw_str(14, 20, "E   L   E   V   E   N")
 
 	elif hour == 0:
-		draw_str(screen, 16, 20, "T   W   E   L   V   E", color_on)
+		_draw_str(16, 20, "T   W   E   L   V   E")
 
 #}}}
 
@@ -269,24 +280,20 @@ def draw_clock(screen, attrs=[]):
 
 #{{{ Draw everything
 def draw(screen, attrs):
-	rows, cols = screen.getmaxyx()
+	(height, width) = screen.getmaxyx()
 
-	if rows < 25 or cols < 51:
+	(rows, cols) = (23, 49)
+
+	if height < rows+2 or width < cols+2:
 		screen.clear()
+		screen.refresh()
 		return
 
-	y = int(rows/2 - 23/2)
-	x = int(cols/2 - 49/2)
+	top  = int(height/2 - rows/2)
+	left = int( width/2 - cols/2)
 
-	border = screen.derwin(23, 49, y, x)
-	clock = border.derwin(19, 41, 2, 4)
-
-	draw_clock(clock, attrs[0])
-	draw_border(border, ['┃','┃','━','━','┏','┓','┗','┛'], attrs[1])
-
-	border.noutrefresh()
-	clock.noutrefresh()
-	screen.refresh()
+	draw_clock(screen, attrs[0], offset=(top+2, left+4))
+	draw_border(screen, ['┃','┃','━','━','┏','┓','┗','┛'], attrs[1], size=(rows, cols), offset=(top, left))
 #}}}
 
 
@@ -307,28 +314,20 @@ def run():
 #{{{ Main event loop
 	while True:
 
+		redraw()
+		sleep(0.25)
 
 		event = screen.getch()
+		curses.flushinp()
 
 		if event == curses.ERR:
-			pass
+			continue
 		elif event == ord('q'):
 			break
 		elif event == ord('r'):
 			screen.clear()
 		elif event == curses.KEY_RESIZE:
 			screen.clear()
-
-		redraw()
-		sleep(0.25)
-
-			# redraw()
-			# render(screen, colors, now)
-
-		# time = datetime.now()
-		# screen.addstr(0, 0, str(time))
-
-		# sleep(0.25)
 #}}}
 
 	curses_fini(curses, screen)
