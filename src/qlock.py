@@ -278,44 +278,64 @@ def draw_clock(screen, attrs=[], size=None, offset=None):
 #}}}
 
 
-#{{{ Draw everything
-def draw(screen, attrs):
-	(height, width) = screen.getmaxyx()
+#{{{ Curses class
+class Curses:
 
-	(rows, cols) = (23, 49)
+	def __init__(self, screen=None):
+		self.screen = curses_init() if screen is None else screen
+		self.colors = curses_colors(curses)
+		self.container = None
+		self.clock = None
+		self.frame = 0
 
-	if height < rows+2 or width < cols+2:
-		screen.clear()
-		screen.refresh()
-		return
 
-	top  = int(height/2 - rows/2)
-	left = int( width/2 - cols/2)
+	def invalidate(self):
+		if self.container is not None or self.clock is not None:
+			self.screen.erase()
+		self.container = None
+		self.clock = None
 
-	draw_clock(screen, attrs[0], offset=(top+2, left+4))
-	draw_border(screen, ['┃','┃','━','━','┏','┓','┗','┛'], attrs[1], size=(rows, cols), offset=(top, left))
+
+	def update(self):
+		if self.container is None or self.clock is None:
+			(maxy, maxx) = self.screen.getmaxyx()
+			if maxy < 23 or maxx < 49:
+				self.invalidate()
+			top  = int(maxy/2 - 23/2)
+			left = int(maxx/2 - 49/2)
+			self.container = self.screen.derwin(23, 49, top, left)
+			self.clock = self.container.derwin(19, 41, 2, 4)
+
+
+	def redraw(self):
+		(maxy, maxx) = self.screen.getmaxyx()
+		if maxy < 23 or maxx < 49:
+			self.invalidate()
+			return
+		if self.container is None or self.clock is None:
+			self.update()
+		self.frame += 1
+		self.screen.touchwin()
+		draw_border(self.container, ['┃','┃','━','━','┏','┓','┗','┛'], self.colors(0))
+		draw_clock(self.clock, [self.colors(2), self.colors(0)])
+		# draw_str(self.screen, 0, 0, "frame: "+str(self.frame))
+		self.screen.refresh()
 #}}}
 
 
 
 
 #{{{ Run
-def run():
+def run(screen=None):
 	screen = curses_init()
-	if screen is None:
-		return 1
 
-	colors = curses_colors(curses)
-
-	redraw = lambda: draw(screen, [[colors(2), colors(0)], colors(0)])
-
-	redraw()
+	widget = Curses(screen)
 
 #{{{ Main event loop
 	while True:
 
-		redraw()
-		sleep(0.25)
+		widget.redraw()
+		sleep(0.1)
 
 		event = screen.getch()
 		curses.flushinp()
@@ -325,9 +345,10 @@ def run():
 		elif event == ord('q'):
 			break
 		elif event == ord('r'):
-			screen.clear()
+			widget.invalidate()
 		elif event == curses.KEY_RESIZE:
-			screen.clear()
+			widget.invalidate()
+			continue
 #}}}
 
 	curses_fini(curses, screen)
@@ -336,13 +357,14 @@ def run():
 #}}}
 
 
+
 #{{{ Main
 def main(argv=None):
 	if argv is None:
 		argv = sys.argv
 	argc = len(argv)
 
-	run()
+	curses.wrapper(run)
 
 	return 0
 
