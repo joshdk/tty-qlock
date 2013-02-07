@@ -56,31 +56,31 @@ def curses_colors(curses):
 	if curses.has_colors() != True:
 		return color_none
 
-	# Iniaialize all possible color pairs
-	for i, (fg, bg) in enumerate([(f, b) for b in range(-1, 8) for f in range(-1, 8)]):
-		curses.init_pair(i+1, fg, bg)
+	colors = {(-1, -1): curses.color_pair(0)}
 
 	def color_full(fg=None, bg=None):
-		if bg is None or bg == -1:
-			bg = 0
-		else:
-			bg += 1
+		fg = -1 if fg is None else fg
+		bg = -1 if bg is None else bg
 
-		if fg is None or fg == -1:
-			fg = 0
-		else:
-			fg += 1
+		if (fg, bg) not in colors:
+			if fg in [-1, 0, 1, 2, 3, 4, 5, 6, 7]:
+				bold = 0
+			elif fg in [8, 9, 10, 11, 12, 13, 14, 15]:
+				bold = curses.A_BOLD
+				fg -= 8
+			else:
+				return curses.color_pair(0)
 
-		if not 0 <= bg <= 8:
-			return curses.color_pair(0)
+			if bg not in [-1, 0, 1, 2, 3, 4, 5, 6, 7]:
+				return curses.color_pair(0)
 
-		if not 0 <= fg <= 16:
-			return curses.color_pair(0)
+			try:
+				curses.init_pair(len(colors), fg, bg)
+				colors[(fg, bg)] = curses.color_pair(len(colors) | bold)
+			except:
+				return curses.color_pair(0)
 
-		if fg > 8: # bold?
-			return curses.color_pair(9 * bg + (fg-8) + 1) | curses.A_BOLD
-		else:
-			return curses.color_pair(9 * bg + fg + 1)
+		return colors[(fg, bg)]
 
 	return color_full
 #}}}
@@ -318,7 +318,6 @@ class Curses:
 		self.screen.touchwin()
 		draw_border(self.container, ['┃','┃','━','━','┏','┓','┗','┛'], self.colors(0))
 		draw_clock(self.clock, [self.colors(2), self.colors(0)])
-		# draw_str(self.screen, 0, 0, "frame: "+str(self.frame))
 		self.screen.refresh()
 #}}}
 
@@ -355,7 +354,6 @@ def run(screen=None):
 
 	return 0
 #}}}
-
 
 
 #{{{ Main
