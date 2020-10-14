@@ -1,11 +1,16 @@
-SOURCE="./src/qlock.py"
-TARGET="/usr/bin/tty-qlock"
+#### General ####
 
+# All target for when make is run on its own.
+.PHONY: all
+all: style
 
-all: install
+#### Linting ####
 
-install:
-	install -m 755 $(SOURCE) $(TARGET)
-
-uninstall:
-	rm $(TARGET)
+# Format code. Unformatted code will fail in CI.
+.PHONY: style
+style:
+ifdef GITHUB_ACTIONS
+	goimports -l .
+else
+	goimports -l -w .
+endif
