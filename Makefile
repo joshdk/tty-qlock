@@ -17,11 +17,6 @@ endif
 
 #### Release ####
 
-# Compress binaries with UPX.
-.PHONY: compress
-compress:
-	upx --best --ultra-brute dist/qlock_*/qlock*
-
 # Build and publish binaries as Github release artifacts.
 .PHONY: release
 release:
