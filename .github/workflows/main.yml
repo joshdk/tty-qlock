@@ -40,7 +40,10 @@ jobs:
         uses: actions/checkout@v2
 
       - name: Install goimports
-        run: cd /tmp && go get -u golang.org/x/tools/cmd/goimports
+        run: |-
+          cd "$(mktemp -d)"
+          go get -u golang.org/x/tools/cmd/goimports
+          rm -rf "$PWD"
 
       - name: Lint code
         run: make style
