@@ -17,6 +17,12 @@ import (
 var version = "development"
 
 func main() {
+	var showAMPMFlag bool
+	flag.BoolVar(&showAMPMFlag, "show-am-pm", false, "visualize AM/PM")
+
+	var compactFlag bool
+	flag.BoolVar(&compactFlag, "compact", false, "compact format")
+
 	var offColorFlag string
 	flag.StringVar(&offColorFlag, "off-color", "black", "color for disabled letters")
 
@@ -25,6 +31,7 @@ func main() {
 
 	var versionFlag bool
 	flag.BoolVar(&versionFlag, "version", false, "print version and exit")
+
 
 	flag.Parse()
 
@@ -39,6 +46,8 @@ func main() {
 	game.Screen().AddEntity(qlock.New(
 		color(onColorFlag),
 		color(offColorFlag),
+		compactFlag,
+		showAMPMFlag,
 	))
 	game.Start()
 }

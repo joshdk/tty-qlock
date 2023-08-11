@@ -5,6 +5,7 @@
 package qlock
 
 import (
+	"strings"
 	"time"
 
 	"github.com/JoelOtter/termloop"
@@ -13,13 +14,33 @@ import (
 type clock struct {
 	colorOn  termloop.Attr
 	colorOff termloop.Attr
+	compact  bool
+	showAMPM bool
 }
 
-func New(colorOn, colorOff termloop.Attr) termloop.Drawable {
+func New(colorOn, colorOff termloop.Attr, compact, ampm bool) termloop.Drawable {
 	return &clock{
 		colorOn:  colorOn,
 		colorOff: colorOff,
+		compact:  compact,
+		showAMPM: ampm,
 	}
+}
+
+func (c *clock) width() int {
+	if c.compact {
+		return compactWidth
+	}
+
+	return width
+}
+
+func (c *clock) height() int {
+	if c.compact {
+		return compactHeight
+	}
+
+	return height
 }
 
 func (*clock) Tick(termloop.Event) {}
@@ -33,32 +54,82 @@ func (c *clock) Draw(s *termloop.Screen) {
 	screenWidth, screenHeight := s.Size()
 
 	// Get the X "origin" for drawing all components relative to this offset.
-	originX := (screenWidth - width) / 2
+	originX := (screenWidth - c.width()) / 2
 	if originX < 0 {
 		originX = 0
 	}
 
 	// Get the Y "origin" for drawing all components relative to this offset.
-	originY := (screenHeight - height) / 2
+	originY := (screenHeight - c.height()) / 2
 	if originY < 0 {
 		originY = 0
 	}
 
-	// Get all the components that should be enabled.
-	enabled := entries(hour, minute)
+	board := entries(hour, minute, c.showAMPM)
 
-	// Loop over the list of all components...
-	for entry := range all {
-		if _, found := enabled[entry]; found {
-			// If the component was one of the enabled ones, draw it with the
-			// "on" color.
-			t := termloop.NewText(originX+entry.x, originY+entry.y, entry.text, c.colorOn, termloop.ColorDefault)
-			t.Draw(s)
-		} else {
-			// If the component was not one of the enabled ones, draw it with
-			// the "off" color.
-			t := termloop.NewText(originX+entry.x, originY+entry.y, entry.text, c.colorOff, termloop.ColorDefault)
-			t.Draw(s)
+	minuteMarker := minute % 5
+
+	for idx := 1; idx < 5; idx++ {
+		state := c.colorOff
+		if idx <= minuteMarker {
+			state = c.colorOn
+		}
+		termloop.NewText(
+			originX+idx*(4*c.offsetMultiplier()),
+			originY,
+			dot,
+			state,
+			termloop.ColorDefault,
+		).Draw(s)
+	}
+
+	for idx, row := range board {
+		x := 0
+		for _, item := range row {
+			state := c.colorOff
+			if item.Active {
+				state = c.colorOn
+			}
+
+			text := c.text(item.Text)
+
+			termloop.NewText(
+				originX+x,
+				originY+(idx*c.offsetMultiplier()) + 1,
+				text,
+				state,
+				termloop.ColorDefault,
+			).Draw(s)
+
+			x += len(text) + c.offsetX()
 		}
 	}
+}
+
+func (c *clock) offsetX() int {
+	if c.compact {
+		return 1
+	}
+
+	return 3
+}
+
+func (c *clock) offsetMultiplier() int {
+	if c.compact {
+		return 1
+	}
+
+	return 2
+}
+
+func (c *clock) text(str string) string {
+	if c.compact {
+		str = strings.Join(strings.Split(str, ""), " ")
+		str = strings.Replace(str, " ' ", "'", 1)
+	} else {
+		str = strings.Join(strings.Split(str, ""), "   ")
+		str = strings.Replace(str, "   '   ", "'  ", 1)
+	}
+
+	return str
 }
